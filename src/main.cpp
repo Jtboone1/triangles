@@ -10,7 +10,9 @@
 #include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
+void processInput(GLFWwindow *window, Shader shader);
+
+float alpha = 0.2f;
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -38,7 +40,7 @@ int main()
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // glfw window creation
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -60,7 +62,7 @@ int main()
     std::cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
     // Here we abstract shader logic with object
-    Shader ourShader("./resources/shaders/vertShader.txt", "./resources/shaders/fragShader.txt");
+    Shader ourShader("./resources/shaders/vertShader.glsl", "./resources/shaders/fragShader.glsl");
 
     unsigned int VBO, EBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -126,18 +128,20 @@ int main()
     glBindVertexArray(0);
 
     ourShader.use(); // don't forget to activate the shader before setting uniforms!  
-    glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0); // set it manually
-    glUniform1i(glGetUniformLocation(ourShader.ID, "texture2"), 1); // or with shader class
+    glUniform1i(glGetUniformLocation(ourShader.ID, "texture1"), 0); 
+    glUniform1i(glGetUniformLocation(ourShader.ID, "texture2"), 1); 
 
     // render loop
     while (!glfwWindowShouldClose(window))
     {
         // input
-        processInput(window);
+        processInput(window, ourShader);
 
         // render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        ourShader.setFloat("alpha", alpha);
 
         // Use the array object to draw a triangle on the screen
         glActiveTexture(GL_TEXTURE0);
@@ -159,10 +163,16 @@ int main()
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-void processInput(GLFWwindow *window)
+void processInput(GLFWwindow *window, Shader shader)
 {
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    
+    if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        alpha += .02;
+
+    if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        alpha -= .02;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
