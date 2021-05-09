@@ -1,10 +1,14 @@
-// GLFW setup code to create context / a window that is 
-// cross platform to start working with modern openGL
-
+// Context with GLFW and function pointers with glad
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include <shader_s.h>
 #include <iostream>
+
+// Math Libraries
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -13,17 +17,19 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window, Shader shader);
 
 float alpha = 0.2f;
+float xMovement = 0.5;
+float yMovement = 0.5;
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
 float vertices[] = {
-    // positions          // colors           // texture coords
-     0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-     0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-    -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-    -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+    // positions           // texture coords
+     0.5f,  0.5f, 0.0f,    1.0f, 1.0f,   // top right
+     0.5f, -0.5f, 0.0f,    1.0f, 0.0f,   // bottom right
+    -0.5f, -0.5f, 0.0f,    0.0f, 0.0f,   // bottom left
+    -0.5f,  0.5f, 0.0f,    0.0f, 1.0f    // top left 
 };
 
 unsigned int indices[] = {  // note that we start from 0!
@@ -78,12 +84,10 @@ int main()
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
 
     // Attrinbute pointers to memory on the GPU
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3* sizeof(float)));
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3* sizeof(float)));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);  
 
     // Loading Crate Texture
     int width, height, nrChannels;
@@ -150,6 +154,14 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture2);
 
         ourShader.use();
+        glm::mat4 trans = glm::mat4(1);
+        trans = glm::translate(trans, glm::vec3(xMovement, yMovement, 0.0));
+        trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
+    
+        unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
+
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -168,11 +180,17 @@ void processInput(GLFWwindow *window, Shader shader)
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
     
+    if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
+        xMovement -= 0.05;
+
+    if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
+        xMovement += 0.05;
+
     if(glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        alpha += .02;
+        yMovement -= 0.05;
 
     if(glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        alpha -= .02;
+        yMovement += 0.05;
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
